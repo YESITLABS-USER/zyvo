@@ -102,10 +102,21 @@ function RegisterModal(props) {
       const { authorization, user } = appleResponse;
       const fullName = user?.name ? `${user.name.firstName || ""} ${user.name.lastName || ""}`.trim() : "";
       
+      // const payload = {
+      //   social_id: authorization.id_token,
+      //   name: fullName,
+      //   email: user?.email || "",
+      // };
+
+      const nameParts = fullName ? fullName.split(" ") : [];
+      const fname = nameParts[0] || "";
+      const lname = nameParts.slice(1).join(" ") || ""; 
+  
       const payload = {
+        email : user?.email,
+        fname,
+        lname,
         social_id: authorization.id_token,
-        name: fullName,
-        email: user?.email || "",
       };
       
       const response = await SocialLogin(payload);
