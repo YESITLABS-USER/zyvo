@@ -509,6 +509,43 @@ export default function useAuth() {
       }
     },
   });
+  const { mutateAsync: SocialLogin } = useMutation({
+    mutationKey: [`social_login`, "SocialLogin"],
+    mutationFn: async (payload) => {
+      try {
+        setManualLoading(true);
+        const response = await guestApi.post(
+          "social_login",
+          payload
+        );
+
+        const { data } = response;
+
+        if (data) {
+          // Dispatch user info to Redux store after a slight delay
+          localStorage.setItem(KEYS.USER_INFO, JSON.stringify({access_token: data?.data?.token, user_id:data?.data?.user_id}))
+
+          setTimeout(() => {
+            dispatch(setUserInfo(data?.data));
+          }, 1000);
+        }
+        return {
+          ...data?.data,success:true, message: data?.message
+        };
+      } catch (error) {
+        setManualLoading(false);
+        console.log(error, "error message codes");
+        const errorMessage =
+          error.response?.data?.message || // Custom error from API
+          error.message || // Default error message
+          "An unknown error occurred";
+
+        throw new Error(errorMessage);
+      } finally {
+        setManualLoading(false);
+      }
+    },
+  });
 
   const isLoading = manualLoading;
   return {
@@ -527,5 +564,6 @@ export default function useAuth() {
     verify_email_verification_otp,
     send_phone_verification_otp,
     verify_phone_verification_otp,
+    SocialLogin
   };
 }

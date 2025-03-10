@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Button, Modal } from "react-bootstrap";
-import { useSelector } from "react-redux";
 
 import { CountryDropdown } from "react-country-region-selector";
 import VerificationModal from "./VerificationModal";
@@ -11,6 +10,9 @@ import ForgotWithEmail from "./ForgotWithEmail";
 import EmailLoginModal from "./LoginWithEmail";
 import Loader from "../../Loader";
 import countries from "world-countries";
+import { auth, provider, signInWithPopup } from "./FirebaseLogin.js";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 
 function RegisterModal(props) {
@@ -20,7 +22,7 @@ function RegisterModal(props) {
     handleSubmit,
     formState: { errors },
   } = useForm();
-  const { registerUser, numOtpVerify, LoginWithPhone, isLoading } = useAuth();
+  const { registerUser, numOtpVerify,SocialLogin, LoginWithPhone, isLoading } = useAuth();
   const [selectedCountryFlag, setSelectedCountryFlag] = useState('')
   const [selectedCountryCode, setSelectedCountryCode] = useState('');
 
@@ -54,9 +56,47 @@ function RegisterModal(props) {
     setSelectedCountry(countryName)
   }
 
-  console.log(selectedCountry)
-  console.log(selectedCountryCode)
-  console.log(selectedCountryFlag)
+  const handleGoogleSignIn = async () => {
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      const { displayName, email, uid } = user;
+  
+      // Split displayName into first and last name
+      const nameParts = displayName ? displayName.split(" ") : [];
+      const fname = nameParts[0] || "";
+      const lname = nameParts.slice(1).join(" ") || ""; 
+  
+      const payload = {
+        email,
+        fname,
+        lname,
+        social_id: uid,
+      };
+  
+      const response = await SocialLogin(payload);
+      if (response) {
+        toast.success(response?.data?.message || "Registered Successfully");
+ 
+        // Handle login modal if present
+        if (props?.loginModal) {
+          props?.CallBack(false);
+          navigate("/")
+        }
+      } else {
+        toast.error("Login successful, but an error occurred on the server.");
+        console.error("Backend Response Error:", response.data);
+      }
+    } catch (error) {
+      console.error("Firebase Google Login Error or Backend Error:", error);
+      toast.error("Failed to login with Google.");
+    }
+  };
+  
+
+  // console.log(selectedCountry)
+  // console.log(selectedCountryCode)
+  // console.log(selectedCountryFlag)
   const onSubmit = async (data, event) => {
     event?.preventDefault();
 
@@ -308,6 +348,10 @@ function RegisterModal(props) {
                           props?.onHide();
                           setSwitchLogin(true);
                         }
+                      }
+                      if(provider == "google"){
+                        e.preventDefault();
+                        handleGoogleSignIn()
                       }
                     }}
                   >

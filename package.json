@@ -12,6 +12,7 @@
     "axios": "^1.7.9",
     "bootstrap": "^5.3.3",
     "cra-template": "1.2.0",
+    "firebase": "^11.4.0",
     "google-map-react": "^2.2.1",
     "lucide-react": "^0.477.0",
     "moment": "^2.30.1",
