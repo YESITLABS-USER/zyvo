@@ -107,11 +107,13 @@ function RegisterModal(props) {
       //   name: fullName,
       //   email: user?.email || "",
       // };
-
+console.log(fullName)
       const nameParts = fullName ? fullName.split(" ") : [];
       const fname = nameParts[0] || "";
       const lname = nameParts.slice(1).join(" ") || ""; 
-  
+  console.log(fname, 'fff')
+  console.log(user?.email, 'fff')
+  console.log(user, 'user')
       const payload = {
         email : user?.email,
         fname,
