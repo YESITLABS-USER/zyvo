@@ -19,6 +19,11 @@ export const firebaseConfigureData = {
   "FIREBASE_MEASUREMENT_ID": "G-BWFVKH06ZL"
 }
 
+export const appleConfiguration = {
+  "APPLE_CLIENT_ID": "app.vercel.zyvo-beta",
+  "APPLE_REDIRECT_URL" : "https://zyvo-beta.vercel.app/"
+}
+
 export default {
   selectedFlow
 };

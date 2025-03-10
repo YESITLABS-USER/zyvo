@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Button, Modal } from "react-bootstrap";
 
@@ -10,7 +10,7 @@ import ForgotWithEmail from "./ForgotWithEmail";
 import EmailLoginModal from "./LoginWithEmail";
 import Loader from "../../Loader";
 import countries from "world-countries";
-import { auth, provider, signInWithPopup } from "./FirebaseLogin.js";
+import { auth, initializeAppleSignInScript, provider, signInWithPopup } from "./FirebaseLogin.js";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -55,6 +55,9 @@ function RegisterModal(props) {
     setSelectedCountryCode(`${country.idd.root}${country.idd.suffixes ? country.idd.suffixes[0] : ""}`)
     setSelectedCountry(countryName)
   }
+  useEffect(() => {
+    initializeAppleSignInScript()
+  },[])
 
   const handleGoogleSignIn = async () => {
     try {
@@ -75,9 +78,9 @@ function RegisterModal(props) {
       };
   
       const response = await SocialLogin(payload);
-      if (response) {
+      if (response.status) {
         toast.success(response?.data?.message || "Registered Successfully");
- 
+        
         // Handle login modal if present
         if (props?.loginModal) {
           props?.CallBack(false);
@@ -90,6 +93,39 @@ function RegisterModal(props) {
     } catch (error) {
       console.error("Firebase Google Login Error or Backend Error:", error);
       toast.error("Failed to login with Google.");
+    }
+  };
+  
+  const handleAppleSignIn = async () => {
+    try {
+      const appleResponse = await window.AppleID.auth.signIn();
+      const { authorization, user } = appleResponse;
+      const fullName = user?.name ? `${user.name.firstName || ""} ${user.name.lastName || ""}`.trim() : "";
+      
+      const payload = {
+        social_id: authorization.id_token,
+        name: fullName,
+        email: user?.email || "",
+      };
+      
+      const response = await SocialLogin(payload);
+      // Send payload to backend for authentication
+  
+      if (response.status) {
+        toast.success(response?.data?.message || "Registered Successfully");
+        
+        // Handle login modal if present
+        if (props?.loginModal) {
+          props?.CallBack(false);
+          navigate("/")
+        }
+      } else {
+        toast.error("Login successful, but an error occurred on the server.");
+        console.error("Backend Response Error:", response.data);
+      }
+    } catch (error) {
+      console.error("Apple Sign-In Error:", error);
+      toast.error("Failed to login with Apple.");
     }
   };
   
@@ -352,6 +388,10 @@ function RegisterModal(props) {
                       if(provider == "google"){
                         e.preventDefault();
                         handleGoogleSignIn()
+                      }
+                      if(provider == "apple"){
+                        e.preventDefault();
+                        handleAppleSignIn()
                       }
                     }}
                   >
