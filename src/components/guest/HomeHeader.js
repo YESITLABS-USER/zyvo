@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/style.css";
 import Autocomplete from "react-google-autocomplete";
-import { GOOGLE_KEY } from "../../config/Constant";
+import { GOOGLE_KEY, KEYS } from "../../config/Constant";
 import { CloseButton, Col, Container, Row, Form, Button, Tabs, Tab, Modal, Dropdown, ToggleButtonGroup, ToggleButton, InputGroup, Image } from "react-bootstrap";
 import RegisterModal from "./authModalGuest/RegisterModal";
 import CircularSlider from '@fseehawer/react-circular-slider';
@@ -31,7 +31,6 @@ const generateTimeOptions = () => {
 
 const HomeHeader = () => {
   const [regModl, setRegModl] = useState(false);
-  const [location, setLocation] = useState("");
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedActivity, setSelectedActivity] = useState("");
   const [key, setKey] = useState("dates");
@@ -46,8 +45,6 @@ const HomeHeader = () => {
   const timeOptions = generateTimeOptions();
   const locationData = ["Alaska, US", "California, US", "Delaware, US", "Florida, US", "New York, US"];
   const activities = ["Stays", "Event Space", "Photo Shoot", "Music Video", "Birthday Party", "Wedding", "Meeting", "Baby Shower", "Pool"];
-  const [isAddingPlace, setIsAddingPlace] = useState(true)
-
 
   // 2nd Model Code
   const [selectedPlace, setSelectedPlace] = useState("");
@@ -56,78 +53,27 @@ const HomeHeader = () => {
   const [filterLocation, setFilterLocation] = useState('');
   const [preferences, setPreferences] = useState({});
   const [showOtherActivities, setShowOtherActivities] = useState(false);
-  const [selectedDuration, setSelectedDuration] = useState(2);
-  const [selectedDay, setSelectedDay] = useState(1);
-  const [selectedMonth, setSelectedMonth] = useState("January");
-  const [selectedYear, setSelectedYear] = useState(2024);
-  const [seletedDateFilter, setSeletedDateFilter] = useState('');
+  const [selectedDuration, setSelectedDuration] = useState(null);
+  const [removeFilter, setRemoveFilter] = useState(false);
+
   const [selectedActivitiesFilter, setSelectedActivitiesFilter] = useState([]); // Default selected activities
   const [selectedAmenities, setSelectedAmenities] = useState([]);
   const [selectedLanguages, setSelectedLanguages] = useState([]);
-  const [selectedValue, setSelectedValue] = useState(1);
+  const [selectedValue, setSelectedValue] = useState("any_type");
   const [showMoreLanguages, setShowMoreLanguages] = useState(false);
-  const [values, setValues] = useState([50, 150]); // Min and Max values
+  const [values, setValues] = useState([50, 150]); // "Min" and Max values
   const [togglesBooking, setTogglesBooking] = useState([
-    { title: "Instant Book", description: "Listings you can book without waiting for host approval", toggle: false },
-    { title: "Self check-in", description: "Easy access to the property once you arrive", toggle: true },
-    { title: "Allows pets", description: "", toggle: false, info: true }
+    { title: "Instant Book", name:"instant_booking", description: "Listings you can book without waiting for host approval", toggle: false },
+    { title: "Self check-in", name:"self_check_in", description: "Easy access to the property once you arrive", toggle: false },
+    { title: "Allows pets", name:"allows_pets", description: "", toggle: false, info: true }
   ]);
 
-  const { setShowMap, showMap } = useCommon()
+    const localSaved = JSON.parse(localStorage.getItem(KEYS.USER_INFO));
+    const login_id = String(localSaved?.user_id);
 
-  {/* Autocomplete Input for Adding New Location */ }
-  // {
-  //   isAddingPlace && (
-  //     <div className="user-data-list-item">
-  //       <Autocomplete
-  //         apiKey={GOOGLE_KEY}
-  //         onPlaceSelected={(place) =>
-  //           setSelectedPlace(place.formatted_address)
-  //         }
-  //         options={{
-  //           types: ["(cities)"],
-  //         }}
-  //         placeholder="Search for a place..."
-  //         className="google-autocomplete"
-  //       />
-  //       {/* Check Icon: Save Location */}
-  //       {selectedPlace && (
-  //         <button
-  //           type="button"
-  //           className="check"
-  //           onClick={() => handleAdd("place")}
-  //         >
-  //           <i className="fa-solid fa-check"></i>
-  //         </button>
-  //       )}
-  //       {/* Cancel Icon: Close Input */}
-  //       {!selectedPlace && (
-  //         <button
-  //           type="button"
-  //           onClick={() => setIsAddingPlace(false)}
-  //         >
-  //           <i className="fa-solid fa-xmark"></i>
-  //         </button>
-  //       )}
-  //     </div>
-  //   )
-  // }
-  // {
-  //   !isAddingPlace && places.length <= 1 && (
-  //     <button
-  //       type="button"
-  //       className="add-new-btn"
-  //       onClick={() => setIsAddingPlace(true)}
-  //     >
-  //       Add New <i className="fa-solid fa-plus"></i>
-  //     </button>
-  //   )
-  // }
+  const [finalDate, setFinalDate] = useState(null);
 
-
-  console.log(selectedPlace);
-
-
+  const { setShowMap, showMap,homeDataFilters, guestHomeData } = useCommon();
 
   const handleShowMap = () => {
     console.log("Hello Clicked");
@@ -139,9 +85,9 @@ const HomeHeader = () => {
   const handleCleanAll = () => {
     setValues([50, 150])
     setFilterLocation('')
-    setSeletedDateFilter('')
     setSelectedDuration(0)
     setPreferences({})
+    setFinalDate(null)
     setSelectedActivitiesFilter([])
     setSelectedAmenities([])
     setTogglesBooking([
@@ -183,7 +129,7 @@ const HomeHeader = () => {
   const handleToggleBooking = (index) => {
     setTogglesBooking((prevToggles) =>
       prevToggles.map((item, i) =>
-        i === index ? { ...item, toggle: !item.toggle } : item
+        i === index ? { ...item, name:item.name, toggle: !item.toggle } : item
       )
     );
   };
@@ -246,12 +192,6 @@ const HomeHeader = () => {
     { name: "Audio Recording", icon: "https://design.yilstaging.com/ZYVO/assets/images/filters/activities/16.svg" },
     { name: "Swimming Pool", icon: "https://design.yilstaging.com/ZYVO/assets/images/filters/activities/17.svg" },
   ];
-
-  const handleSearch = () => {
-    alert("Search button clicked!");
-  };
-
-
 
   const handleRemoveData = (setValue) => {
     if (setValue === setFlexibleDate) {
@@ -319,11 +259,11 @@ const HomeHeader = () => {
   };
 
   const sections = [
-    { title: "Number of people", options: ["Any", 3, 4, 5, 7, "8+"] },
-    { title: "Property size (sq ft)", options: ["Any", 250, 350, 450, 550, 650, 750] },
-    { title: "Parking space capacity", options: ["Any", 1, 2, 3, 4, 5, 6, 7, "8+"] },
-    { title: "Bedrooms", options: ["Any", 1, 2, 3, 4, 5, 6, 7, "8+"] },
-    { title: "Bathrooms", options: ["Any", 1, 2, 3, 4, 5, 6, 7, "8+"] }
+    { title: "Number of people", name: "people_count", options: ["Any", 3, 4, 5, 7, "8+"] },
+    { title: "Property size (sq ft)",name: "property_size", options: ["Any", 250, 350, 450, 550, 650, 750] },
+    { title: "Parking space capacity",name: "parking_space", options: ["Any", 1, 2, 3, 4, 5, 6, 7, "8+"] },
+    { title: "Bedrooms",name: "bedroom", options: ["Any", 1, 2, 3, 4, 5, 6, 7, "8+"] },
+    { title: "Bathrooms", name: "bathroom", options: ["Any", 1, 2, 3, 4, 5, 6, 7, "8+"] }
   ];
 
   const handleSelect = (section, option) => {
@@ -335,11 +275,44 @@ const HomeHeader = () => {
     setPreferences({ ...preferences, [section]: newValue });
     console.log(preferences);
   };
-  const handleDateFilter = () => {
-    let date = ` ${selectedMonth} ${selectedDay} ${selectedYear}`
-    setSeletedDateFilter(date)
-  }
 
+
+  const handleSearch = async () => {
+    const payload = {
+      place_type: selectedValue,
+      minimum_price: values[0],
+      maximum_price: values[1],
+      location: filterLocation,
+      ...(selectedDuration && {time: selectedDuration}),
+      ...preferences,
+      instant_booking: togglesBooking?.[0]?.toggle ? 1 : 0,
+      self_check_in: togglesBooking?.[1]?.toggle ? 1 : 0,
+      allows_pets: togglesBooking?.[2]?.toggle ? 1 : 0,
+      date: finalDate,
+      ...(selectedActivitiesFilter?.length > 0 && { activities: selectedActivitiesFilter }),
+      ...(selectedAmenities?.length > 0 && { amenities: selectedAmenities }),
+      ...(selectedLanguages?.length > 0 && { languages: selectedLanguages }),
+    };
+    // console.log(payload, 'pay')
+
+    const response = await homeDataFilters(payload)
+    // console.log(response, 'res')
+    if(response.success) {
+      setFilterShow(false)
+      setRemoveFilter(true)
+    }
+    // alert("Search button clicked!");
+  };
+
+  const handleClearFilter = async() => {
+    const response = await guestHomeData({
+      user_id: login_id,
+         latitude: 22.572645,
+         longitude: 88.363892,
+    })
+    
+    setRemoveFilter(false)
+  }
 
   return (
     <>
@@ -642,6 +615,9 @@ const HomeHeader = () => {
             {/* Right Side Buttons */}
             <Col md="auto" className="ms-auto d-flex gap-2">
               {/* Filters Button */}
+              {removeFilter && <Button onClick={handleClearFilter} variant="outline-secondary" className="d-flex align-items-center">
+                Clear Filter
+              </Button>}
               <Button onClick={() => setFilterShow(true)} variant="outline-secondary" className="d-flex align-items-center">
                 <img src="https://design.yilstaging.com/ZYVO/assets/images/filters/filters.svg" alt="Filters" className="me-2" style={{ width: 20, height: 20 }} />
                 Filters
@@ -758,9 +734,9 @@ const HomeHeader = () => {
                 style={{ backgroundColor: "#D1D4D4", padding: "5px" }}
               >
                 {[
-                  { id: "tbg-btn-1", value: 1, label: "Any Type" },
-                  { id: "tbg-btn-2", value: 2, label: "Room" },
-                  { id: "tbg-btn-3", value: 3, label: "Entire Home" },
+                  { id: "tbg-btn-1", value: "any_type", label: "Any Type" },
+                  { id: "tbg-btn-2", value: "room", label: "Room" },
+                  { id: "tbg-btn-3", value: "entire_home", label: "Entire Home" },
                 ].map((btn) => (
                   <ToggleButton
                     key={btn.id}
@@ -880,135 +856,45 @@ const HomeHeader = () => {
               </Dropdown>
               {/* Location Dropdown */}
               <Dropdown className="p-2">
-                {/* Dropdown Toggle Button */}
                 <Dropdown.Toggle
                   variant="light"
                   id="dropdown-basic"
                   className="d-flex align-items-center bg-white rounded-pill shadow-sm border"
                   style={{
-                    padding: "12px 16px",
-                    fontSize: "1.2rem",
-                    fontWeight: "500",
-                    font: "caption",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    border: "1px solid #ddd",
+                    padding: '12px 16px',
+                    fontSize: '1.2rem',
+                    fontWeight: '500',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    border: '1px solid #ddd',
                   }}
                 >
-                  {/* <Calendar size={18} className="me-2" /> */}
-                  <img src="https://design.yilstaging.com/ZYVO/assets/images/filters/calendar-icon.svg" alt=""
+                  <img src="https://design.yilstaging.com/ZYVO/assets/images/filters/calendar-icon.svg" alt="calendar icon"
                     style={{ width: 20, height: 20, padding: '2px' }}
                   />
-                  {seletedDateFilter ? seletedDateFilter : "Date"}
-                  <span
-                    style={{
-                      backgroundColor: "#50E3C2",
-                      borderRadius: "50%",
-                      width: "22px",
-                      height: "22px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      marginLeft: "10px",
-                    }}
-                  >
-                    <Pencil size={12} color="white" />
-                  </span>
+                  {finalDate ? format(finalDate, 'yyyy-MM-dd') : 'Date'}
                 </Dropdown.Toggle>
 
-                {/* Dropdown Menu */}
                 <Dropdown.Menu
                   style={{
-                    padding: "15px",
-                    boxShadow: "0px 4px 10px rgba(0,0,0,0.1)",
-                    borderRadius: "12px",
-                    border: "none",
-                    minWidth: "240px",
+                    padding: '15px',
+                    boxShadow: '0px 4px 10px rgba(0,0,0,0.1)',
+                    borderRadius: '12px',
+                    border: 'none',
+                    minWidth: '240px',
                   }}
                 >
-                  {/* Date Selectors */}
-                  <div className="d-flex gap-2">
-                    <Form.Select
-                      value={selectedDay}
-                      onChange={(e) => setSelectedDay(e.target.value)}
-                      style={{
-                        flex: 1,
-                        borderRadius: "8px",
-                        padding: "8px 10px",
-                        fontSize: "14px",
-                      }}
-                    >
-                      {[...Array(31).keys()].map((day) => (
-                        <option key={day + 1} value={day + 1}>
-                          {day + 1}
-                        </option>
-                      ))}
-                    </Form.Select>
-
-                    <Form.Select
-                      value={selectedMonth}
-                      onChange={(e) => setSelectedMonth(e.target.value)}
-                      style={{
-                        flex: 2,
-                        borderRadius: "8px",
-                        padding: "8px 10px",
-                        fontSize: "14px",
-                      }}
-                    >
-                      {[
-                        "January",
-                        "February",
-                        "March",
-                        "April",
-                        "May",
-                        "June",
-                        "July",
-                        "August",
-                        "September",
-                        "October",
-                        "November",
-                        "December",
-                      ].map((month) => (
-                        <option key={month} value={month}>
-                          {month}
-                        </option>
-                      ))}
-                    </Form.Select>
-
-                    <Form.Select
-                      value={selectedYear}
-                      onChange={(e) => setSelectedYear(e.target.value)}
-                      style={{
-                        flex: 1,
-                        borderRadius: "8px",
-                        padding: "8px 10px",
-                        fontSize: "14px",
-                      }}
-                    >
-                      {[...Array(10).keys()].map((year) => (
-                        <option key={2024 + year} value={2024 + year}>
-                          {2024 + year}
-                        </option>
-                      ))}
-                    </Form.Select>
-                  </div>
-
-                  {/* Save Button */}
-                  <Button
-                    onClick={handleDateFilter}
-                    variant="dark"
-                    className="w-100 mt-3"
-                    style={{
-                      borderRadius: "8px",
-                      padding: "10px",
-                      fontWeight: "500",
-                      backgroundColor: "#2D3E3F",
-                      border: "none",
+                  <DayPicker
+                    mode="single"
+                    selected={finalDate}
+                    onSelect={(date) => {
+                      setFinalDate(format(date || new Date(), 'yyyy-MM-dd'));
+                      setSelectedDate(false);
                     }}
-                  >
-                    Save
-                  </Button>
+                    
+                  />
+
                 </Dropdown.Menu>
               </Dropdown>
             </div>
@@ -1030,7 +916,7 @@ const HomeHeader = () => {
                   }}
                 >
                   <Clock size={18} className="me-2" />
-                  {selectedDuration ? `${selectedDuration} hours` : "Time"}
+                  {selectedDuration > 0 ? `${selectedDuration} hours` : "Time"}
                   <div
                     className="d-flex align-items-center justify-content-center ms-2"
                     style={{
@@ -1064,9 +950,10 @@ const HomeHeader = () => {
                       fontSize: "14px",
                     }}
                   >
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((duration) => (
+                    <option value={0} > Select Hours </option>
+                    {[2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22].map((duration) => (
                       <option key={duration} value={duration}>
-                        {duration} {duration === "1" ? "hour" : "hours"}
+                        {duration} hours
                       </option>
                     ))}
                   </Form.Select>
@@ -1106,20 +993,20 @@ const HomeHeader = () => {
                     {/* Toggle Buttons */}
                     <ToggleButtonGroup
                       type="radio"
-                      name={section.title}
-                      value={preferences[section.title] || ""}
-                      onChange={(value) => handleSelect(section.title, value)}
+                      name={section.name}
+                      value={preferences[section.name] || ""}
+                      onChange={(value) => handleSelect(section.name, value)}
                       className="d-flex flex-wrap gap-2"
                     >
                       {section.options.map((option, idx) => (
                         <ToggleButton
                           key={idx}
-                          id={`${section.title}-${idx}`}
+                          id={`${section.name}-${idx}`}
                           value={option}
                           variant="light"
                           className="border-0 rounded-pill px-3 py-2"
                           style={{
-                            backgroundColor: preferences[section.title] === option ? "#50E3C2" : "transparent",
+                            backgroundColor: preferences[section.name] === option ? "#50E3C2" : "transparent",
                             fontWeight: "500",
                             cursor: "pointer",
                           }}
@@ -1136,8 +1023,8 @@ const HomeHeader = () => {
                           <Form.Control
                             type="number"
                             placeholder="Type..."
-                            // value={customInputs[section.title] || ""}
-                            onChange={(e) => handleInputChange(section.title, e.target.value)}
+                            // value={customInputs[section.name] || ""}
+                            onChange={(e) => handleInputChange(section.name, e.target.value)}
                             className="text-center border-0"
                             style={{
                               height: "40px",

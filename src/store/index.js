@@ -6,6 +6,7 @@ import contentSlice from "./slices/contentSlice";
 
 import profileSlice from "./slices/profileSlice";
 import hostuserSlice from "./slices/hostuserSlice";
+import { commonSlice } from "./slices/commonSlice";
 
 const store = configureStore({
   reducer: {
@@ -13,6 +14,7 @@ const store = configureStore({
     content: contentSlice,
     profile: profileSlice,
     hostuser: hostuserSlice,
+    common : commonSlice.reducer,
   },
 });
 

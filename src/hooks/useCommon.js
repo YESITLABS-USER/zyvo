@@ -23,7 +23,6 @@ export default function useCommon() {
         setManualLoading(true);
         const response = await guestApi.post("get_home_data", payload);
         const { data } = response;
-
         if (data?.data) {
           setTimeout(() => {
             dispatch(setGuestHome(data?.data));
@@ -456,6 +455,35 @@ export default function useCommon() {
       }
     },
   });
+  const { mutateAsync: homeDataFilters } = useMutation({
+    mutationKey: ["get_home_data_filter", "user"],
+    mutationFn: async (payload) => {
+      try {
+        setManualLoading(true);
+        const response = await guestApi.post("get_home_data_filter", payload);
+        const { data } = response;
+
+        if (data?.data) {
+          setTimeout(() => {
+            dispatch(setGuestHome(data?.data));
+          }, 1000);}
+
+        return {
+          ...data,
+          message: data?.message,
+        };
+      } catch (error) {
+        const errorMessage =
+          error.response?.data?.message ||
+          error.message ||
+          "An unknown error occurred";
+          console.log(errorMessage)
+        // throw new Error(errorMessage);
+      } finally {
+        setManualLoading(false);
+      }
+    },
+  });
 
   const isLoading = manualLoading;
   return {
@@ -474,5 +502,6 @@ export default function useCommon() {
     setPrefferCard,
     getSavedAddress,
     bookHostProverty,
+    homeDataFilters
   };
 }

@@ -3,7 +3,7 @@ import HomeHeader from "../../components/guest/HomeHeader";
 import Footer from "../../components/guest/Footer";
 
 import HeaderFilter from "../../components/guest/HeaderFilter";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 import Header from "../../components/host/Header";
 import Constant, { KEYS, imageBase } from "../../config/Constant";
@@ -13,12 +13,20 @@ import Pagination from "../../components/guest/Pagination";
 import ProductItem from "../../components/guest/ProductItem";
 import Map from "../../components/guest/Map";
 import { Button, Col, Container, Row } from "react-bootstrap";
+import { useSelector } from "react-redux";
 
 const Home = () => {
   const { guestHomeData, guestWishlistData, showMap, setShowMap } = useCommon();
+
+  const selectorData = useSelector((state) => state.common)
+  
+  const localSaved = JSON.parse(localStorage.getItem(KEYS.USER_INFO));
+  const login_id = String(localSaved?.user_id);
+
   let SelectedFlow = Constant?.selectedFlow;
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
+
 
   const [localHomeList, setLocalHomeList] = useState([]);
   const [wishlistArr, setWishlistArr] = useState([]);
@@ -59,7 +67,7 @@ const Home = () => {
   useEffect(() => {
     const getWishlist = async () => {
       const wishlistData = await guestWishlistData({
-        "user_id": 1
+        "user_id": login_id
       })
       // console.log("wishlist data is", wishlistData);
       setWishlistArr(wishlistData?.data);
@@ -70,15 +78,21 @@ const Home = () => {
   //
 
   const fetchList = async () => {
-    const response = await guestHomeData({
-      user_id: 1,
+   await guestHomeData({
+      user_id: login_id,
       latitude: 22.572645,
       longitude: 88.363892,
     });
-    if (response) {
-      setLocalHomeList(response?.data);
-    }
+    // if (response) {
+    //   setLocalHomeList(response?.data);
+    // }
   };
+
+  useEffect(() => {
+    if(selectorData?.guestHomeData){
+      setLocalHomeList(selectorData?.guestHomeData);
+    }
+  },[selectorData])
 
 
 
